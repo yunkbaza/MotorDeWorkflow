@@ -1,0 +1,11 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: workflow-db-supremo
+    restart: always
+    environment:
+      POSTGRES_USER: baza_admin
+      POSTGRES_PASSWORD: baza123
+      POSTGRES_DB: workflow_db
+    ports:
+      - "5434:5432"
