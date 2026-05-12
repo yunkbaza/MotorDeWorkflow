@@ -61,43 +61,46 @@ public class WorkflowEngineService {
                 throw new IllegalStateException("Grafo inválido: Ciclo infinito ou sem ponto de partida detectado!");
             }
 
-            // --- ARQUITETURA SÉNIOR: EXECUÇÃO BFS (Breadth-First Search) ---
+            // --- ARQUITETURA SÉNIOR: EXECUÇÃO BFS COM MEMÓRIA (CONTEXTO) ---
 
             Queue<WorkflowNode> queue = new LinkedList<>(startNodes);
             Set<String> visited = new HashSet<>();
 
+            // O COFRE! Aqui guardamos o que cada nó produziu para os próximos poderem usar.
+            Map<String, Object> workflowContext = new java.util.concurrent.ConcurrentHashMap<>();
+
             while (!queue.isEmpty()) {
                 WorkflowNode currentNode = queue.poll();
 
-                // Proteção contra loops (se já visitámos este nó, ignoramos)
                 if (visited.contains(currentNode.id())) continue;
                 visited.add(currentNode.id());
 
-                // Guardar o estado (Checkpoint de Resiliência)
                 execution.setCurrentNodeId(currentNode.id());
                 repository.save(execution);
 
-                // Executar a Tarefa (Padrão Strategy)
                 NodeExecutor executor = executors.get(currentNode.type());
                 if (executor == null) {
                     throw new IllegalArgumentException("Motor não tem executor para o tipo: " + currentNode.type());
                 }
-                executor.execute(currentNode, execution.getId().toString());
 
-                // 4. O Cérebro em ação: Quais são os próximos nós apontados por este?
+                // 🌟 EXECUTA E GUARDA O RESULTADO NA MEMÓRIA GLOBAL!
+                Object result = executor.execute(currentNode, execution.getId().toString(), workflowContext);
+                if (result != null) {
+                    // Guarda na memória com a chave sendo o ID do nó (ex: "n1": "dados do http...")
+                    workflowContext.put(currentNode.id(), result);
+                }
+
                 List<WorkflowNode> nextNodes = graph.edges().stream()
                         .filter(edge -> edge.source().equals(currentNode.id()))
-                        .map(edge -> nodeMap.get(edge.target())) // Pega a referência rápida do Dicionário
+                        .map(edge -> nodeMap.get(edge.target()))
                         .toList();
 
-                // Adiciona os próximos nós à fila de execução
                 queue.addAll(nextNodes);
             }
-
             // --- FIM COM SUCESSO ---
             execution.setStatus(ExecutionStatus.COMPLETED);
             execution.setCompletedAt(LocalDateTime.now());
-            System.out.println("✅ Workflow concluído com sucesso!\n");
+            System.out.println("🧠 Memória Final do Workflow: " + workflowContext);
 
         } catch (Exception e) {
             execution.setStatus(ExecutionStatus.FAILED);
