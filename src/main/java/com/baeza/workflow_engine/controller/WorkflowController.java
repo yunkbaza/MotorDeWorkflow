@@ -1,6 +1,5 @@
 package com.baeza.workflow_engine.controller;
 
-import com.baeza.workflow_engine.domain.WorkflowGraph;
 import com.baeza.workflow_engine.engine.WorkflowEngineService;
 import com.baeza.workflow_engine.entity.WorkflowExecution;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +16,8 @@ public class WorkflowController {
     }
 
     @PostMapping("/execute")
-    public ResponseEntity<WorkflowExecution> executeWorkflow(@RequestBody WorkflowGraph graph) {
-        WorkflowExecution execution = engineService.runWorkflow(graph);
-        return ResponseEntity.ok(execution);
+    public ResponseEntity<WorkflowExecution> executeWorkflow(@RequestBody WorkflowRequest request) {
+        WorkflowExecution execution = engineService.startWorkflow(request.graph(), request.initialContext());
+        return ResponseEntity.accepted().body(execution); // Retorna 202 imediatamente!
     }
 }

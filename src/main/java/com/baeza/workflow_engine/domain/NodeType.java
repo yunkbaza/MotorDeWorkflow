@@ -5,5 +5,7 @@ public enum NodeType {
     HTTP_REQUEST,
     SEND_EMAIL,
     LOG_CONSOLE,
-    SAVE_DATABASE
+    SAVE_DATABASE,
+    JSON_EXTRACT,
+    DECISION
 }
