@@ -22,10 +22,16 @@ public class ApiKeyFilter extends OncePerRequestFilter {
 
         String requestKey = request.getHeader("X-API-KEY");
 
-        if (apiKey.equals(requestKey)) {
+        // 🔍 LOG DE DIAGNÓSTICO (Aparecerá no terminal do IntelliJ)
+        System.out.println("🛡️ Segurança | Chave Esperada: [" + apiKey + "] | Chave Recebida: [" + requestKey + "]");
+
+        // Usamos .trim() para evitar erros com espaços invisíveis e verificamos se não é nulo
+        if (requestKey != null && apiKey.trim().equals(requestKey.trim())) {
             filterChain.doFilter(request, response);
         } else {
+            System.err.println("❌ Bloqueado: API Key não coincide!");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setHeader("Content-Type", "text/plain;charset=UTF-8");
             response.getWriter().write("Acesso Negado: API Key invalida ou ausente.");
         }
     }

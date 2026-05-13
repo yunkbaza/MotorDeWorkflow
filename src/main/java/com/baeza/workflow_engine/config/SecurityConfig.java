@@ -22,19 +22,13 @@ public class SecurityConfig {
         return new org.springframework.security.provisioning.InMemoryUserDetailsManager();
     }
 
-    @Bean // 🌟 O SEGREDO ESTAVA AQUI! Sem isto, o Spring ignora este método.
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                // Desativar CSRF (necessário para APIs REST)
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // Definir que a API não guarda estado de sessão
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // Permitir todas as rotas (porque o nosso ApiKeyFilter fará o controlo manual)
+                // Permitimos tudo aqui porque o controlo real é feito manualmente pelo ApiKeyFilter lá em cima
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-
-                // Injetar o nosso filtro de API Key antes do filtro padrão do Spring
                 .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
